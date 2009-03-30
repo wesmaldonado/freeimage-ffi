@@ -133,6 +133,9 @@ class FreeImage
     
     # DLL_API FIBITMAP *DLL_CALLCONV FreeImage_Load(FREE_IMAGE_FORMAT fif, const char *filename, int flags FI_DEFAULT(0));
     attach_function :FreeImage_Load, [:int, :string, :int], :pointer
-    
+
+    # DLL_API BOOL DLL_CALLCONV FreeImage_Save(FREE_IMAGE_FORMAT fif, FIBITMAP *dib, const char *filename, int flags FI_DEFAULT(0));    
+    attach_function :FreeImage_Save, [:int, :pointer, :string, :int], :int
+
   end
 end
