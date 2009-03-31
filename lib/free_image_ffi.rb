@@ -131,8 +131,24 @@ class FreeImage
     attach_function :FreeImage_FIFSupportsReading, [:int], :int
     attach_function :FreeImage_FIFSupportsWriting, [:int], :int
     
+    # Last functions needed for image_science 
+    # TODO: FreeImage_FIFSupportsICCProfiles
+    # TODO: FreeImage_GetICCProfile
+    # TODO: FreeImage_CreateICCProfile
+    # TODO: FreeImage_Copy
+    # TODO: FreeImage_GetHeight
+    # TODO: FreeImage_GetWidth
+    # TODO: FreeImage_Rescale
+    # TODO: FreeImage_DestroyICCProfile
+    # TODO: FreeImage_SetOutputMessage
+    
+    
+    
     # DLL_API FIBITMAP *DLL_CALLCONV FreeImage_Load(FREE_IMAGE_FORMAT fif, const char *filename, int flags FI_DEFAULT(0));
     attach_function :FreeImage_Load, [:int, :string, :int], :pointer
+    
+    #DLL_API void DLL_CALLCONV FreeImage_Unload(FIBITMAP *dib);
+    attach_function :FreeImage_Unload, [:pointer], :void
 
     # DLL_API BOOL DLL_CALLCONV FreeImage_Save(FREE_IMAGE_FORMAT fif, FIBITMAP *dib, const char *filename, int flags FI_DEFAULT(0));    
     attach_function :FreeImage_Save, [:int, :pointer, :string, :int], :int
