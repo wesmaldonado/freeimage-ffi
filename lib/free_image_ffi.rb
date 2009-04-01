@@ -211,13 +211,28 @@ class FreeImage
     #DLL_API FIBITMAP *DLL_CALLCONV FreeImage_MakeThumbnail(FIBITMAP *dib, int max_pixel_size, BOOL convert FI_DEFAULT(TRUE));
     attach_function :FreeImage_MakeThumbnail, [:pointer, :int, :int], :pointer
     
-    # TODO: FreeImage_SetOutputMessage
-    # typedef void (*FreeImage_OutputMessageFunction)(FREE_IMAGE_FORMAT fif, const char *msg);
-    # typedef void (DLL_CALLCONV *FreeImage_OutputMessageFunctionStdCall)(FREE_IMAGE_FORMAT fif, const char *msg); 
-    # 
-    # DLL_API void DLL_CALLCONV FreeImage_SetOutputMessageStdCall(FreeImage_OutputMessageFunctionStdCall omf); 
-    # DLL_API void DLL_CALLCONV FreeImage_SetOutputMessage(FreeImage_OutputMessageFunction omf);
-    # DLL_API void DLL_CALLCONV FreeImage_OutputMessageProc(int fif, const char *fmt, ...);
+
+    # To see how to use this look here: http://kenai.com/projects/ruby-ffi/pages/Examples
+    # Generally
+    #
+    # YourModule::OutputMessageCallback = Proc.new do |format, message|
+    #  puts "Format #{format} said #{message}"
+    # end
+    # FreeImage::FFI.FreeImage_SetOutputMessage(YourModule::OutputMessageCallback)
     
+    # typedef void (*FreeImage_OutputMessageFunction)(FREE_IMAGE_FORMAT fif, const char *msg);
+    callback :FreeImage_OutputMessageFunction, [:int, :string], :void
+    
+    # typedef void (DLL_CALLCONV *FreeImage_OutputMessageFunctionStdCall)(FREE_IMAGE_FORMAT fif, const char *msg); 
+    callback :FreeImage_OutputMessageFunctionStdCall, [:int, :string], :void
+    
+    # DLL_API void DLL_CALLCONV FreeImage_SetOutputMessageStdCall(FreeImage_OutputMessageFunctionStdCall omf); 
+    attach_function :FreeImage_SetOutputMessageStdCall, [:FreeImage_OutputMessageFunctionStdCall], :void
+
+    # DLL_API void DLL_CALLCONV FreeImage_SetOutputMessage(FreeImage_OutputMessageFunction omf);
+    attach_function :FreeImage_SetOutputMessage, [:FreeImage_OutputMessageFunction], :void
+        
+    # DLL_API void DLL_CALLCONV FreeImage_OutputMessageProc(int fif, const char *fmt, ...);
+    attach_function :FreeImage_OutputMessageProc, [:int, :string], :void
   end
 end
