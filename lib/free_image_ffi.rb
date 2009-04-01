@@ -123,6 +123,7 @@ class FreeImage
     extend ::FFI::Library
     ffi_lib 'freeimage.3'
 
+
     # Takes file_path and bytes to read, returns FreeImage::Format
     attach_function :FreeImage_GetFileType, [:string, :int], :int
     attach_function :FreeImage_GetFIFFromFilename, [:string], :int
@@ -130,18 +131,6 @@ class FreeImage
     # Takes Free Image Format, returns 0/1 for boolean
     attach_function :FreeImage_FIFSupportsReading, [:int], :int
     attach_function :FreeImage_FIFSupportsWriting, [:int], :int
-    
-    # Last functions needed for image_science 
-    # TODO: FreeImage_FIFSupportsICCProfiles
-    # TODO: FreeImage_GetICCProfile
-    # TODO: FreeImage_CreateICCProfile
-    # TODO: FreeImage_Copy
-    # TODO: FreeImage_GetHeight
-    # TODO: FreeImage_GetWidth
-    # TODO: FreeImage_Rescale
-    # TODO: FreeImage_DestroyICCProfile
-    # TODO: FreeImage_SetOutputMessage
-    
     
     
     # DLL_API FIBITMAP *DLL_CALLCONV FreeImage_Load(FREE_IMAGE_FORMAT fif, const char *filename, int flags FI_DEFAULT(0));
@@ -153,5 +142,82 @@ class FreeImage
     # DLL_API BOOL DLL_CALLCONV FreeImage_Save(FREE_IMAGE_FORMAT fif, FIBITMAP *dib, const char *filename, int flags FI_DEFAULT(0));    
     attach_function :FreeImage_Save, [:int, :pointer, :string, :int], :int
 
+    #DLL_API BOOL DLL_CALLCONV FreeImage_FIFSupportsICCProfiles(FREE_IMAGE_FORMAT fif);
+    attach_function :FreeImage_FIFSupportsICCProfiles, [:int], :int
+    
+    # FI_STRUCT (FIICCPROFILE) { 
+    #       WORD    flags;  // info flag
+    #       DWORD size; // profile's size measured in bytes
+    #       void   *data; // points to a block of contiguous memory containing the profile
+    #     };
+    class ICCProfile < ::FFI::ManagedStruct
+      layout :flags,  :uint16,
+             :size,  :uint32,
+             :data, :pointer
+
+      def self.release(ptr)
+        FreeImage::FFI.free_object(ptr)
+      end
+    end
+    # DLL_API FIICCPROFILE *DLL_CALLCONV FreeImage_GetICCProfile(FIBITMAP *dib);
+    attach_function :FreeImage_GetICCProfile, [:pointer], :pointer
+    
+    # DLL_API FIICCPROFILE *DLL_CALLCONV FreeImage_CreateICCProfile(FIBITMAP *dib, void *data, long size);
+    # See "copy_icc_profile" from image_science
+    attach_function :FreeImage_CreateICCProfile, [:pointer, :pointer, :long], :pointer
+    # void copy_icc_profile(VALUE self, FIBITMAP *from, FIBITMAP *to) {
+    #   FREE_IMAGE_FORMAT fif = FIX2INT(rb_iv_get(self, "@file_type"));
+    #   if (fif != FIF_PNG && FreeImage_FIFSupportsICCProfiles(fif)) {
+    #     FIICCPROFILE *profile = FreeImage_GetICCProfile(from);
+    #     if (profile && profile->data) { 
+    #       FreeImage_CreateICCProfile(to, profile->data, profile->size); 
+    #     }
+    #   }
+    # }
+    
+    # DLL_API void DLL_CALLCONV FreeImage_DestroyICCProfile(FIBITMAP *dib);
+    attach_function :FreeImage_DestroyICCProfile, [:pointer], :void
+    
+    # DLL_API FIICCPROFILE *DLL_CALLCONV FreeImage_CreateICCProfile(FIBITMAP *dib, void *data, long size);
+    attach_function :FreeImage_CreateICCProfile, [:pointer, :pointer, :long], :pointer
+
+    #DLL_API FIBITMAP *DLL_CALLCONV FreeImage_Copy(FIBITMAP *dib, int left, int top, int right, int bottom);
+    # Basically this is a way to crop an image... copy it from the source into a new image of these dimensions.
+    attach_function :FreeImage_Copy, [:pointer, :int, :int, :int, :int], :pointer
+    # TODO: FreeImage_Page
+    #DLL_API BOOL DLL_CALLCONV FreeImage_Paste(FIBITMAP *dst, FIBITMAP *src, int left, int top, int alpha);
+    attach_function :FreeImage_Paste, [:pointer, :pointer, :int, :int, :int], :int
+    
+    # DLL_API unsigned DLL_CALLCONV FreeImage_GetWidth(FIBITMAP *dib);
+    attach_function :FreeImage_GetWidth, [:pointer], :uint
+    # DLL_API unsigned DLL_CALLCONV FreeImage_GetHeight(FIBITMAP *dib);
+    attach_function :FreeImage_GetHeight, [:pointer], :uint
+    
+    module Filter
+      #/** Upsampling / downsampling filters. 
+      #Constants used in FreeImage_Rescale.
+      # */
+    	BOX		     = 0  	# Box, pulse, Fourier window, 1st order (constant) b-spline
+    	BICUBIC	   = 1	# Mitchell & Netravali's two-param cubic filter
+    	BILINEAR   = 2	# Bilinear filter
+    	BSPLINE	   = 3	# 4th order (cubic) b-spline
+    	CATMULLROM = 4	# Catmull-Rom spline, Overhauser spline
+    	LANCZOS3	 = 5 # Lanczos3 filter
+    end
+    # TODO: FreeImage_Rescale
+    # DLL_API FIBITMAP *DLL_CALLCONV FreeImage_Rescale(FIBITMAP *dib, int dst_width, int dst_height, FREE_IMAGE_FILTER filter);
+    attach_function :FreeImage_Rescale, [:pointer, :int, :int, :int], :pointer
+    
+    #DLL_API FIBITMAP *DLL_CALLCONV FreeImage_MakeThumbnail(FIBITMAP *dib, int max_pixel_size, BOOL convert FI_DEFAULT(TRUE));
+    attach_function :FreeImage_MakeThumbnail, [:pointer, :int, :int], :pointer
+    
+    # TODO: FreeImage_SetOutputMessage
+    # typedef void (*FreeImage_OutputMessageFunction)(FREE_IMAGE_FORMAT fif, const char *msg);
+    # typedef void (DLL_CALLCONV *FreeImage_OutputMessageFunctionStdCall)(FREE_IMAGE_FORMAT fif, const char *msg); 
+    # 
+    # DLL_API void DLL_CALLCONV FreeImage_SetOutputMessageStdCall(FreeImage_OutputMessageFunctionStdCall omf); 
+    # DLL_API void DLL_CALLCONV FreeImage_SetOutputMessage(FreeImage_OutputMessageFunction omf);
+    # DLL_API void DLL_CALLCONV FreeImage_OutputMessageProc(int fif, const char *fmt, ...);
+    
   end
 end
